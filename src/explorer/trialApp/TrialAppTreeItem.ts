@@ -32,6 +32,10 @@ export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem 
     public get id(): string {
         return `trialApp${this._defaultHostName}`;
     }
+
+    public get logStreamLabel(): string {
+        return this.client.fullName;
+    }
     public static contextValue: string = 'trialApp';
     public contextValue: string = TrialAppTreeItem.contextValue;
 
@@ -45,10 +49,10 @@ export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem 
     public deploymentsNode: DeploymentsTreeItem;
 
     public client: TrialAppClient;
+    public readonly logFilesNode: LogFilesTreeItem;
 
     private readonly _defaultHostName: string;
     private readonly _siteFilesNode: SiteFilesTreeItem;
-    private readonly _logFilesNode: LogFilesTreeItem;
 
     private constructor(parent: AzureAccountTreeItem, metadata: ITrialAppMetadata) {
         super(parent);
@@ -58,7 +62,7 @@ export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem 
         this.defaultHostUrl = `https://${this.defaultHostName}`;
         this.deploymentsNode = new DeploymentsTreeItem(parent, this.client, {}, {});
         this._siteFilesNode = new SiteFilesTreeItem(this, this.client, false);
-        this._logFilesNode = new LogFilesTreeItem(this, this.client);
+        this.logFilesNode = new LogFilesTreeItem(this, this.client);
     }
 
     public static async createTrialAppTreeItem(parent: AzureAccountTreeItem, loginSession: string): Promise<TrialAppTreeItem> {
@@ -81,8 +85,12 @@ export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem 
         const result: string = await requestUtils.sendRequest<string>(metadataRequest);
         return <ITrialAppMetadata>JSON.parse(result);
     }
+
+    public async isHttpLogsEnabled(): Promise<boolean> {
+        return true;
+    }
     public async loadMoreChildrenImpl(_clearCache: boolean, _context: IActionContext): Promise<AzExtTreeItem[]> {
-        return [this.deploymentsNode, this._siteFilesNode, this._logFilesNode];
+        return [this.deploymentsNode, this._siteFilesNode, this.logFilesNode];
     }
     public hasMoreChildrenImpl(): boolean {
         return false;
