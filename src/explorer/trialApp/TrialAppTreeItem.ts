@@ -15,6 +15,29 @@ import { ITrialAppMetadata } from './ITrialAppMetadata';
 import { TrialAppClient } from './TrialAppClient';
 
 export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem {
+    public static contextValue: string = 'trialApp';
+    public contextValue: string = TrialAppTreeItem.contextValue;
+    public metadata: ITrialAppMetadata;
+    public defaultHostName: string;
+    public defaultHostUrl: string;
+    public readonly appSettingsNode: AppSettingsTreeItem;
+    public deploymentsNode: DeploymentsTreeItem;
+    public client: TrialAppClient;
+    public readonly logFilesNode: LogFilesTreeItem;
+
+    private readonly _defaultHostName: string;
+    private readonly _siteFilesNode: SiteFilesTreeItem;
+
+    private constructor(parent: AzureAccountTreeItem, metadata: ITrialAppMetadata) {
+        super(parent);
+        this.client = new TrialAppClient(metadata);
+        this.metadata = metadata;
+        this.defaultHostName = this.metadata.hostName;
+        this.defaultHostUrl = `https://${this.defaultHostName}`;
+        this.deploymentsNode = new DeploymentsTreeItem(parent, this.client, {}, {});
+        this._siteFilesNode = new SiteFilesTreeItem(this, this.client, false);
+        this.logFilesNode = new LogFilesTreeItem(this, this.client);
+    }
 
     public get label(): string {
         return this.metadata.siteName ? this.metadata.siteName : localize('nodeJsTrialApp', 'NodeJS Trial App');
@@ -35,34 +58,6 @@ export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem 
 
     public get logStreamLabel(): string {
         return this.client.fullName;
-    }
-    public static contextValue: string = 'trialApp';
-    public contextValue: string = TrialAppTreeItem.contextValue;
-
-    public metadata: ITrialAppMetadata;
-
-    public defaultHostName: string;
-
-    public defaultHostUrl: string;
-
-    public readonly appSettingsNode: AppSettingsTreeItem;
-    public deploymentsNode: DeploymentsTreeItem;
-
-    public client: TrialAppClient;
-    public readonly logFilesNode: LogFilesTreeItem;
-
-    private readonly _defaultHostName: string;
-    private readonly _siteFilesNode: SiteFilesTreeItem;
-
-    private constructor(parent: AzureAccountTreeItem, metadata: ITrialAppMetadata) {
-        super(parent);
-        this.client = new TrialAppClient(metadata);
-        this.metadata = metadata;
-        this.defaultHostName = this.metadata.hostName;
-        this.defaultHostUrl = `https://${this.defaultHostName}`;
-        this.deploymentsNode = new DeploymentsTreeItem(parent, this.client, {}, {});
-        this._siteFilesNode = new SiteFilesTreeItem(this, this.client, false);
-        this.logFilesNode = new LogFilesTreeItem(this, this.client);
     }
 
     public static async createTrialAppTreeItem(parent: AzureAccountTreeItem, loginSession: string): Promise<TrialAppTreeItem> {
@@ -89,6 +84,8 @@ export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem 
     public async isHttpLogsEnabled(): Promise<boolean> {
         return true;
     }
+
+    public async enableHttpLogs(): Promise<void>;
     public async loadMoreChildrenImpl(_clearCache: boolean, _context: IActionContext): Promise<AzExtTreeItem[]> {
         return [this.deploymentsNode, this._siteFilesNode, this.logFilesNode];
     }

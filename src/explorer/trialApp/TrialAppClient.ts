@@ -12,18 +12,8 @@ import { localize } from '../../localize';
 import { ITrialAppMetadata } from './ITrialAppMetadata';
 
 export class TrialAppClient implements IDeploymentsClient, IFilesClient {
-
-    public get fullName(): string {
-        return this.metadata.hostName;
-    }
     public isFunctionApp: boolean = false;
     public defaultHostUrl: string;
-    public get id(): string {
-        return this.metadata.siteGuid;
-    }
-    public get kuduUrl(): string | undefined {
-        return `https://${this.metadata.scmHostName}`;
-    }
 
     private metadata: ITrialAppMetadata;
     private credentials: ServiceClientCredentials;
@@ -32,12 +22,27 @@ export class TrialAppClient implements IDeploymentsClient, IFilesClient {
         this.metadata = metadata;
         this.credentials = new BasicAuthenticationCredentials(metadata.publishingUserName, metadata.publishingPassword);
     }
-    public async listHostKeys(): Promise<IHostKeys> {
-        throw new Error('Method not implemented.');
+
+    public get fullName(): string {
+        return this.metadata.hostName;
     }
+
+    public get id(): string {
+        return this.metadata.siteGuid;
+    }
+
+    public get kuduUrl(): string | undefined {
+        return `https://${this.metadata.scmHostName}`;
+    }
+
+    public async listHostKeys(): Promise<IHostKeys> {
+        return {};
+    }
+
     public async getSiteConfig(): Promise<SiteConfigResource> {
         return {};
     }
+
     public async getSourceControl(): Promise<SiteSourceControl> {
         return {};
     }
@@ -51,5 +56,4 @@ export class TrialAppClient implements IDeploymentsClient, IFilesClient {
         addExtensionUserAgent(kuduClient);
         return kuduClient;
     }
-
 }
