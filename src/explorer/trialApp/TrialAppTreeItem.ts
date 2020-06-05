@@ -18,8 +18,6 @@ export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem 
     public static contextValue: string = 'trialApp';
     public contextValue: string = TrialAppTreeItem.contextValue;
     public metadata: ITrialAppMetadata;
-    public defaultHostName: string;
-    public defaultHostUrl: string;
     public readonly appSettingsNode: AppSettingsTreeItem;
     public deploymentsNode: DeploymentsTreeItem;
     public client: TrialAppClient;
@@ -32,11 +30,14 @@ export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem 
         super(parent);
         this.client = new TrialAppClient(metadata);
         this.metadata = metadata;
-        this.defaultHostName = this.metadata.hostName;
-        this.defaultHostUrl = `https://${this.defaultHostName}`;
         this.deploymentsNode = new DeploymentsTreeItem(parent, this.client, {}, {});
         this._siteFilesNode = new SiteFilesTreeItem(this, this.client, false);
         this.logFilesNode = new LogFilesTreeItem(this, this.client);
+    }
+
+    public static async createTrialAppTreeItem(parent: AzureAccountTreeItem, loginSession: string): Promise<TrialAppTreeItem> {
+        const metadata: ITrialAppMetadata = await this.getTrialAppMetaData(loginSession);
+        return new TrialAppTreeItem(parent, metadata);
     }
 
     public get label(): string {
@@ -60,9 +61,12 @@ export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem 
         return this.client.fullName;
     }
 
-    public static async createTrialAppTreeItem(parent: AzureAccountTreeItem, loginSession: string): Promise<TrialAppTreeItem> {
-        const metadata: ITrialAppMetadata = await this.getTrialAppMetaData(loginSession);
-        return new TrialAppTreeItem(parent, metadata);
+    public get defaultHostName(): string {
+        return this.metadata.hostName;
+    }
+
+    public get defaultHostUrl(): string {
+        return `https://${this.defaultHostName}`;
     }
 
     public static async getTrialAppMetaData(loginSession: string): Promise<ITrialAppMetadata> {
@@ -85,10 +89,10 @@ export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem 
         return true;
     }
 
-    public async enableHttpLogs(): Promise<void>;
     public async loadMoreChildrenImpl(_clearCache: boolean, _context: IActionContext): Promise<AzExtTreeItem[]> {
         return [this.deploymentsNode, this._siteFilesNode, this.logFilesNode];
     }
+
     public hasMoreChildrenImpl(): boolean {
         return false;
     }
