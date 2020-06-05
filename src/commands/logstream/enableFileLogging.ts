@@ -32,7 +32,7 @@ export async function enableFileLogging(context: IEnableFileLoggingContext, node
         return await siteNode.isHttpLogsEnabled();
     });
 
-    if (!isEnabled && node instanceof SiteTreeItem) {
+    if (!isEnabled && node instanceof SiteTreeItem && siteNode instanceof SiteTreeItem) {
         await ext.ui.showWarningMessage(`Do you want to enable file logging for ${node.root.client.fullName}? The web app will be restarted.`, { modal: true }, DialogResponses.yes);
         const enablingLogging: string = `Enabling Logging for "${node.root.client.fullName}"...`;
         const enabledLogging: string = `Enabled Logging for "${node.root.client.fullName}".`;
