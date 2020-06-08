@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { AppSettingsTreeItem, LogFilesTreeItem, SiteFilesTreeItem } from 'vscode-azureappservice';
-import { AzExtTreeItem, IActionContext } from 'vscode-azureextensionui';
+import { AzExtTreeItem, GenericTreeItem, IActionContext } from 'vscode-azureextensionui';
 import { localize } from '../../localize';
 import { openUrl } from '../../utils/openUrl';
 import { AzureAccountTreeItem } from '../AzureAccountTreeItem';
@@ -23,6 +23,7 @@ export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem 
     private readonly _appSettingsTreeItem: TrialAppApplicationSettingsTreeItem;
     private readonly _siteFilesNode: SiteFilesTreeItem;
     private readonly _connectionsNode: ConnectionsTreeItem;
+    private readonly _tutorialNode: GenericTreeItem;
 
     private constructor(parent: AzureAccountTreeItem, client: TrialAppClient) {
         super(parent);
@@ -70,13 +71,12 @@ export class TrialAppTreeItem extends SiteTreeItemBase implements ISiteTreeItem 
     public get defaultHostUrl(): string {
         return this.client.defaultHostUrl;
     }
-
     public async isHttpLogsEnabled(): Promise<boolean> {
         return true;
     }
 
     public async loadMoreChildrenImpl(_clearCache: boolean, _context: IActionContext): Promise<AzExtTreeItem[]> {
-        return [this._appSettingsTreeItem, this._connectionsNode, this._siteFilesNode, this.logFilesNode];
+        return [this._tutorialNode, this._appSettingsTreeItem, this._connectionsNode, this._siteFilesNode, this.logFilesNode];
     }
     public hasMoreChildrenImpl(): boolean {
         return false;
