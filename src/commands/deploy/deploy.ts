@@ -33,10 +33,14 @@ import { showDeployCompletedMessage } from './showDeployCompletedMessage';
 
 const postDeployCancelTokens: Map<string, vscode.CancellationTokenSource> = new Map();
 
-export async function deploy(context: IActionContext, target?: vscode.Uri | SiteTreeItem, _multiTargets?: (vscode.Uri | SiteTreeItem)[], isTargetNewWebApp: boolean = false): Promise<void> {
+export async function deploy(context: IActionContext, target?: vscode.Uri | SiteTreeItem | TrialAppTreeItem, _multiTargets?: (vscode.Uri | SiteTreeItem)[], isTargetNewWebApp: boolean = false): Promise<void> {
     let webAppSource: WebAppSource | undefined;
     context.telemetry.properties.deployedWithConfigs = 'false';
     let siteConfig: WebSiteModels.SiteConfigResource | undefined;
+
+    if (target instanceof TrialAppTreeItem) {
+        return await deployTrialApp(target);
+    }
 
     const trialAppTreeItem: TrialAppTreeItem | undefined = await shouldDeployTrialApp(target);
     if (trialAppTreeItem) {
@@ -138,13 +142,16 @@ async function shouldDeployTrialApp(target: vscode.Uri | SiteTreeItem | undefine
 }
 
 async function deployTrialApp(trialAppTreeItem: TrialAppTreeItem): Promise<void> {
+    const trialAppNotFoundError: Error = Error(localize('unableToDeployTrialApp', 'Unable to deploy trial app: Clone trial app source and open folder in VS Code to deploy'));
     const title: string = localize('deploying', 'Deploying to "{0}"... Check [output window](command:{1}) for status.', trialAppTreeItem.metadata.siteName, `${ext.prefix}.showOutputChannel`);
-    await window.withProgress({ location: ProgressLocation.Notification, title }, async () => {
-        if (workspace.workspaceFolders) {
-            const trialAppPath = workspace.workspaceFolders.find((folder: WorkspaceFolder) => {
-                return folder.name === trialAppTreeItem.metadata.siteName;
-            });
-            if (trialAppPath) {
+
+    const workspaceFolders: WorkspaceFolder[] | undefined = workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length < 0) {
+        const trialAppPath = workspaceFolders.find((folder: WorkspaceFolder) => {
+            return folder.name === trialAppTreeItem.metadata.siteName;
+        });
+        if (trialAppPath) {
+            await window.withProgress({ location: ProgressLocation.Notification, title }, async () => {
 
                 // the -a flag stages all changes before committing
                 ext.outputChannel.appendLog(localize('committingChanges', 'Committing changes'));
@@ -165,15 +172,20 @@ async function deployTrialApp(trialAppTreeItem: TrialAppTreeItem): Promise<void>
                             ext.outputChannel.show();
                         } else if (result === browseWebsiteBtn) {
                             await trialAppTreeItem.browse();
-                        } else if (result === streamLogs) {
-                            // must wait on current PR
-                            // await startStreamingLogs(context, trialAppTreeItem);
                         }
                     });
                 });
-            }
+            });
         } else {
-            throw Error(localize('unableToDeployTrialApp', 'Unable to deploy trial app: Clone trial app source and open folder in VS Code to deploy'));
+            const clone: MessageItem = { title: 'Clone trial app' };
+            await window.showErrorMessage(trialAppNotFoundError.message, clone).then((value: MessageItem) => {
+                if (value === clone) {
+                    vscode.commands.executeCommand('git.clone', trialAppTreeItem.metadata.gitUrl);
+                }
+            });
+            return;
         }
-    });
+    } else {
+        throw trialAppNotFoundError;
+    }
 }
