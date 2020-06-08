@@ -6,12 +6,17 @@
 import * as WebSiteModels from 'azure-arm-website/lib/models';
 import { pathExists } from 'fs-extra';
 import * as path from 'path';
+import * as git from 'simple-git/promise';
 import * as vscode from 'vscode';
+import { commands, MessageItem, ProgressLocation, window, workspace, WorkspaceFolder } from 'vscode';
 import * as appservice from 'vscode-azureappservice';
-import { IActionContext } from 'vscode-azureextensionui';
+import { callWithTelemetryAndErrorHandling, IActionContext } from 'vscode-azureextensionui';
 import * as constants from '../../constants';
+import { AppServiceDialogResponses } from '../../constants';
 import { SiteTreeItem } from '../../explorer/SiteTreeItem';
+import { TrialAppTreeItem } from '../../explorer/trialApp/TrialAppTreeItem';
 import { ext } from '../../extensionVariables';
+import { localize } from '../../localize';
 import { javaUtils } from '../../utils/javaUtils';
 import { nonNullValue } from '../../utils/nonNull';
 import { isPathEqual } from '../../utils/pathUtils';
@@ -32,6 +37,11 @@ export async function deploy(context: IActionContext, target?: vscode.Uri | Site
     let webAppSource: WebAppSource | undefined;
     context.telemetry.properties.deployedWithConfigs = 'false';
     let siteConfig: WebSiteModels.SiteConfigResource | undefined;
+
+    const trialAppTreeItem: TrialAppTreeItem | undefined = await shouldDeployTrialApp(target);
+    if (trialAppTreeItem) {
+        return await deployTrialApp(trialAppTreeItem);
+    }
 
     if (target instanceof SiteTreeItem) {
         webAppSource = WebAppSource.tree;
@@ -114,4 +124,56 @@ export async function deploy(context: IActionContext, target?: vscode.Uri | Site
     // don't wait
     // tslint:disable-next-line: no-floating-promises
     runPostDeployTask(node, correlationId, tokenSource);
+}
+
+async function shouldDeployTrialApp(target: vscode.Uri | SiteTreeItem | undefined): Promise<TrialAppTreeItem | undefined> {
+    const trialAppTreeItem: TrialAppTreeItem | undefined = ext.azureAccountTreeItem.trialAppTreeItem;
+    if (target === undefined && trialAppTreeItem) {
+        const response: vscode.QuickPickItem = await ext.ui.showQuickPick([{ label: 'Deploy to trial app' }, { label: 'Deploy to web app' }], { placeHolder: '' });
+        if (response.label === 'Deploy to trial app') {
+            return trialAppTreeItem;
+        }
+    }
+    return undefined;
+}
+
+async function deployTrialApp(trialAppTreeItem: TrialAppTreeItem): Promise<void> {
+    const title: string = localize('deploying', 'Deploying to "{0}"... Check [output window](command:{1}) for status.', trialAppTreeItem.metadata.siteName, `${ext.prefix}.showOutputChannel`);
+    await window.withProgress({ location: ProgressLocation.Notification, title }, async () => {
+        if (workspace.workspaceFolders) {
+            const trialAppPath = workspace.workspaceFolders.find((folder: WorkspaceFolder) => {
+                return folder.name === trialAppTreeItem.metadata.siteName;
+            });
+            if (trialAppPath) {
+
+                // the -a flag stages all changes before committing
+                ext.outputChannel.appendLog(localize('committingChanges', 'Committing changes'));
+                await git(trialAppPath.uri.fsPath).commit('Deploy trial app', undefined, { '-a': null });
+                ext.outputChannel.appendLog(localize('pushingToRemote', 'Pushing to deploy changes'));
+                await commands.executeCommand('git.push');
+                // use showDeployCompletedMessage when able
+                const message: string = localize('deployCompleted', 'Deployment to trial app "{0}" completed.', trialAppTreeItem.metadata.siteName);
+                ext.outputChannel.appendLog(message);
+                const browseWebsiteBtn: MessageItem = { title: localize('browseWebsite', 'Browse Website') };
+                const streamLogs: MessageItem = { title: localize('streamLogs', 'Stream Logs') };
+
+                // don't wait
+                window.showInformationMessage(message, browseWebsiteBtn, streamLogs, AppServiceDialogResponses.viewOutput).then(async (result: MessageItem | undefined) => {
+                    await callWithTelemetryAndErrorHandling('postDeploy', async (context: IActionContext) => {
+                        context.telemetry.properties.dialogResult = result?.title;
+                        if (result === AppServiceDialogResponses.viewOutput) {
+                            ext.outputChannel.show();
+                        } else if (result === browseWebsiteBtn) {
+                            await trialAppTreeItem.browse();
+                        } else if (result === streamLogs) {
+                            // must wait on current PR
+                            // await startStreamingLogs(context, trialAppTreeItem);
+                        }
+                    });
+                });
+            }
+        } else {
+            throw Error(localize('unableToDeployTrialApp', 'Unable to deploy trial app: Clone trial app source and open folder in VS Code to deploy'));
+        }
+    });
 }
