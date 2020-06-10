@@ -6,6 +6,7 @@
 import { Disposable, Uri } from "vscode";
 import { configurationSettings, none } from "../../constants";
 import { SiteTreeItem } from "../../explorer/SiteTreeItem";
+import { TrialAppTreeItem } from '../../explorer/trialApp/TrialAppTreeItem';
 import { WebAppTreeItem } from "../../explorer/WebAppTreeItem";
 import { ext } from '../../extensionVariables';
 import { getWorkspaceSetting, updateWorkspaceSetting } from "../../vsCodeConfig/settings";
@@ -16,7 +17,7 @@ export interface IDeployNode {
     isNewWebApp: boolean;
 }
 
-export async function getDeployNode(context: IDeployContext, target: Uri | string | SiteTreeItem | undefined, isTargetNewWebApp: boolean): Promise<IDeployNode> {
+export async function getDeployNode(context: IDeployContext, target: Uri | string | SiteTreeItem | TrialAppTreeItem | undefined, isTargetNewWebApp: boolean): Promise<IDeployNode> {
     const defaultWebAppId: string | undefined = getWorkspaceSetting(configurationSettings.defaultWebAppToDeploy, context.workspace.uri.fsPath);
     let node: SiteTreeItem | undefined;
 
