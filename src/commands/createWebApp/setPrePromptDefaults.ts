@@ -11,8 +11,9 @@ import { ICreateChildImplContext, LocationListStep } from 'vscode-azureextension
 import { javaUtils } from '../../utils/javaUtils';
 import { findFilesByFileExtension, getSingleRootWorkspace } from '../../utils/workspace';
 import { IDeployContext } from '../deploy/IDeployContext';
+import { ITransferContext } from '../trialApp/transferToSubscription';
 
-export async function setPrePromptDefaults(wizardContext: IAppServiceWizardContext & Partial<IDeployContext> & Partial<ICreateChildImplContext>): Promise<void> {
+export async function setPrePromptDefaults(wizardContext: IAppServiceWizardContext & Partial<IDeployContext> & Partial<ICreateChildImplContext> & Partial<ITransferContext>): Promise<void> {
 
     if (wizardContext.trialAppMetadata) {
         wizardContext.newSiteOS = WebsiteOS.linux;

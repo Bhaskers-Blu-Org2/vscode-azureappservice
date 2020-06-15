@@ -5,9 +5,14 @@
 
 import { IActionContext } from 'vscode-azureextensionui';
 import { TrialAppNotFound } from '../../constants';
+import { ITrialAppMetadata } from '../../explorer/trialApp/ITrialAppMetadata';
 import { TrialAppTreeItem } from '../../explorer/trialApp/TrialAppTreeItem';
 import { ext } from '../../extensionVariables';
 import { deploy } from '../deploy/deploy';
+
+export interface ITransferContext extends IActionContext {
+    trialAppMetadata: ITrialAppMetadata;
+}
 
 export async function transferToSubscription(context: IActionContext, node?: TrialAppTreeItem): Promise<void> {
     if (!node) {
@@ -15,7 +20,8 @@ export async function transferToSubscription(context: IActionContext, node?: Tri
     }
 
     if (node) {
-        await deploy(context, node, undefined, true);
+        const convertContext: ITransferContext = Object.assign({ trialAppMetadata: node.metadata }, context);
+        await deploy(convertContext, node, undefined, true);
     } else {
         throw Error(TrialAppNotFound);
     }
