@@ -13,6 +13,13 @@ import { findFilesByFileExtension, getSingleRootWorkspace } from '../../utils/wo
 import { IDeployContext } from '../deploy/IDeployContext';
 
 export async function setPrePromptDefaults(wizardContext: IAppServiceWizardContext & Partial<IDeployContext> & Partial<ICreateChildImplContext>): Promise<void> {
+
+    if (wizardContext.trialAppMetadata) {
+        wizardContext.newSiteOS = WebsiteOS.linux;
+        wizardContext.newSiteRuntime = 'NODE|lts';
+        wizardContext.recommendedNewSiteName = wizardContext.trialAppMetadata.siteName;
+    }
+
     // if the user entered through "Deploy", we'll have a project to base our recommendations on
     // otherwise, look at their current workspace and only suggest if one workspace is opened
     const workspaceForRecommendation: WorkspaceFolder | undefined = getSingleRootWorkspace(wizardContext);

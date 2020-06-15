@@ -6,6 +6,7 @@
 import { AzExtTreeItem, AzureAccountTreeItemBase, GenericTreeItem, IActionContext, ISubscriptionContext } from 'vscode-azureextensionui';
 import { TrialAppLoginSession } from '../constants';
 import { ext } from '../extensionVariables';
+import { localize } from '../localize';
 import { SubscriptionTreeItem } from './SubscriptionTreeItem';
 import { TrialAppTreeItem } from './trialApp/TrialAppTreeItem';
 
@@ -15,6 +16,16 @@ export class AzureAccountTreeItem extends AzureAccountTreeItemBase {
 
     public constructor(testAccount?: {}) {
         super(undefined, testAccount);
+    }
+
+    public get childTypeLabel(): string {
+        return this.trialAppNode ?
+            localize('subscriptionOrTrialApp', 'subscription or trial app') :
+            localize('subscription', 'subscription');
+    }
+
+    public set childTypeLabel(_value) {
+        return;
     }
 
     public createSubscriptionTreeItem(root: ISubscriptionContext): SubscriptionTreeItem {

@@ -4,10 +4,19 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { IActionContext } from 'vscode-azureextensionui';
+import { TrialAppNotFound } from '../../constants';
 import { TrialAppTreeItem } from '../../explorer/trialApp/TrialAppTreeItem';
+import { ext } from '../../extensionVariables';
 import { deploy } from '../deploy/deploy';
 
-export async function transferToSubscription(context: IActionContext, node: TrialAppTreeItem): Promise<void> {
+export async function transferToSubscription(context: IActionContext, node?: TrialAppTreeItem): Promise<void> {
+    if (!node) {
+        node = ext.azureAccountTreeItem.trialAppNode;
+    }
 
-    await deploy(context, node, undefined, true);
+    if (node) {
+        await deploy(context, node, undefined, true);
+    } else {
+        throw Error(TrialAppNotFound);
+    }
 }

@@ -5,9 +5,9 @@
 
 import { commands } from 'vscode';
 import { IActionContext } from 'vscode-azureextensionui';
+import { TrialAppNotFound } from '../../constants';
 import { TrialAppTreeItem } from '../../explorer/trialApp/TrialAppTreeItem';
 import { ext } from '../../extensionVariables';
-import { localize } from '../../localize';
 
 export async function cloneTrialApp(_context: IActionContext, node?: TrialAppTreeItem): Promise<void> {
     if (!node) {
@@ -17,6 +17,6 @@ export async function cloneTrialApp(_context: IActionContext, node?: TrialAppTre
     if (node) {
         await commands.executeCommand('git.clone', node.metadata.gitUrl);
     } else {
-        throw Error(localize('trialAppNotFound', 'Trial app not found.'));
+        throw Error(TrialAppNotFound);
     }
 }

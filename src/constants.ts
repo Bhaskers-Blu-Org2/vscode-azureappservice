@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 
 import { MessageItem } from 'vscode';
+import { localize } from './localize';
 
 export const deploymentFileName: string = '.deployment';
 export const deploymentFile: string = `[config]
@@ -35,3 +36,5 @@ export const envFileName: string = '.env';
 export const detectorTimestampFormat: string = 'YYYY-MM-DDTHH:mm';
 
 export const TrialAppLoginSession: string = 'TrialApp.LoginSession';
+
+export const TrialAppNotFound: string = localize('trialAppNotFound', 'Trial app not found.');
