@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DeploymentsTreeItem } from "vscode-azureappservice";
+import { AppSettingsTreeItem, DeploymentsTreeItem } from "vscode-azureappservice";
 import { IActionContext, openInPortal as uiOpenInPortal } from "vscode-azureextensionui";
 import { DeploymentSlotsTreeItem } from "../explorer/DeploymentSlotsTreeItem";
 import { SiteTreeItem } from "../explorer/SiteTreeItem";
@@ -25,6 +25,9 @@ export async function openInPortal(context: IActionContext, node?: SiteTreeItem)
         case DeploymentsTreeItem.contextValueConnected:
         case DeploymentsTreeItem.contextValueUnconnected:
             await uiOpenInPortal(node.root, `${node.root.client.id}/vstscd`);
+            return;
+        case AppSettingsTreeItem.contextValue:
+            await node.parent.openInPortal();
             return;
         default:
             await node.openInPortal();
