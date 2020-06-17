@@ -24,21 +24,26 @@ export class AzureAccountTreeItem extends AzureAccountTreeItemBase {
     public async loadMoreChildrenImpl(clearCache: boolean, context: IActionContext): Promise<AzExtTreeItem[]> {
         const children: AzExtTreeItem[] = await super.loadMoreChildrenImpl(clearCache, context);
 
-        const loginSession: string | undefined = ext.context.globalState.get(TrialAppLoginSession);
-
-        if (loginSession) {
-            const ti: AzExtTreeItem[] = await this.createTreeItemsWithErrorHandling(
-                [loginSession],
-                'trialAppInvalid',
-                async (source: string): Promise<AzExtTreeItem> => {
-                    return await TrialAppTreeItem.createTrialAppTreeItem(this, source);
-                },
-                (_source: unknown): string => {
-                    return 'Trial App';
-                });
-
-            if (ti.length > 0) {
-                children.push(ti[0]);
+        if (this.trialAppNode) {
+            await this.trialAppNode.refresh();
+            children.push(this.trialAppNode);
+        } else {
+            const loginSession: string | undefined = ext.context.globalState.get(TrialAppLoginSession);
+            if (loginSession) {
+                const ti: AzExtTreeItem[] = await this.createTreeItemsWithErrorHandling(
+                    [loginSession],
+                    'trialAppInvalid',
+                    async (source: string): Promise<AzExtTreeItem> => {
+                        return await TrialAppTreeItem.createTrialAppTreeItem(this, source);
+                    },
+                    (_source: unknown): string => {
+                        return 'Trial App';
+                    });
+                if (ti.length > 0) {
+                    const treeItem: AzExtTreeItem = ti[0];
+                    children.push(treeItem);
+                    this.trialAppNode = treeItem instanceof TrialAppTreeItem ? treeItem : this.trialAppNode;
+                }
             }
         }
 
