@@ -3,7 +3,7 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import { commands, extensions, Uri } from 'vscode';
+import { commands, extensions, Uri, ViewColumn } from 'vscode';
 import { AzExtTreeItem, IActionContext } from 'vscode-azureextensionui';
 import { TrialAppTreeItem } from '../../explorer/trialApp/TrialAppTreeItem';
 import { delay } from '../../utils/delay';
@@ -44,5 +44,5 @@ export async function showTutorial(context: IActionContext, node?: TrialAppTreeI
 
 function showDidact(): void {
     const tutorialUri: Uri = Uri.file(ext.context.asAbsolutePath('resources/TrialApp.didact.md'));
-    commands.executeCommand('vscode.didact.startDidact', tutorialUri);
+    commands.executeCommand('vscode.didact.startDidact', tutorialUri, ViewColumn.Two);
 }
